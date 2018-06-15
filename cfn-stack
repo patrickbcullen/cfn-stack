@@ -1,0 +1,71 @@
+#!/bin/sh -e
+# cfn-stack: command line helper for CloudFormation
+# Code: https://github.com/patrickbcullen/cfn-stack
+#
+# Usage:
+# cd myapp/
+# cfn-stack init
+# # edit cfn-stack.ini to fit your environment
+# cfn-stack up
+# cfn-stack down
+
+function create_ini () {
+  cat > cfn-stack.ini <<EOF
+stack_name="my-stack"
+region="us-east-1"
+stack_template="my-template.yml"
+template_config="my-config.yml"
+EOF
+  echo "Created cfn-stack.ini. Please update with the correct values for your stack."
+}
+
+function load_ini () {
+  if [ ! -f cfn-stack.ini ]; then
+    echo "Run 'cfn-stack init' to create an initial cfn-stack.ini in the current directory"
+    exit 1
+  fi
+
+  # source the ini file into environment variables
+  . cfn-stack.ini
+
+  # check for requirement environment variables
+  : "${stack_name:?Need to set stack_name in cfn-stack.ini}"
+  : "${region:?Need to set region in cfn-stack.ini}"
+  : "${stack_template:?Need to set stack_template in cfn-stack.ini}"
+}
+
+function create_update_stack () {
+  echo "Creating or updating ${stack_name}"
+  aws cloudformation create-stack --region "${region}" --stack-name "${stack_name}" --template-body "file://./${stack_template}"
+
+  #TODO wait for the stack to be created or to fail
+  #TODO rollback a stack that is create failed state
+}
+
+function delete_stack () {
+  echo "Deleting ${stack_name}"
+}
+
+if [ $# -gt 0 ]; then
+  case "$1" in
+    init)
+      create_ini
+      exit 0
+      ;;
+    up)
+      load_ini
+      create_update_stack
+      ;;
+    down)
+      load_ini
+      delete_stack
+      ;;
+    *) 
+      echo "Valid commands 'init', 'up' or 'down'"
+      exit 1
+      ;;
+  esac
+else
+  echo "Please supply a command of either 'init', 'up', or 'down'"
+  exit 1
+fi
