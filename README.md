@@ -3,17 +3,17 @@ Command line helper for CloudFormation that uses the AWS CLI and simplifies the 
 
 ## Install
 ```
-wget https://github.com/patrickbcullen/cfn-stack/blob/master/cfn-stack
+wget https://raw.githubusercontent.com/patrickbcullen/cfn-stack/master/cfn-stack
 chmod +x cfn-stack
 ```
 
 ## Usage
 ```
 cd myapp/
-cfn-stack init
+./cfn-stack init
 # edit cfn-stack.ini to fit your environment
-cfn-stack up
-cfn-stack down
+./cfn-stack up
+./cfn-stack down
 ```
 
 ## cfn-stack.ini
