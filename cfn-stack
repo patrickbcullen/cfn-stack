@@ -9,6 +9,40 @@
 # cfn-stack up
 # cfn-stack down
 
+returnVal=()
+function convertArgsStrToArray() {
+    local concat=""
+    local t=""
+    returnVal=()
+
+    for word in $@; do
+        local len=`expr "$word" : '.*"'`
+
+        [ "$len" -eq 1 ] && concat="true"
+
+        if [ "$concat" ]; then
+            t+=" $word"
+        else
+            word=${word#\"}
+            word=${word%\"}
+            returnVal+=("$word")
+        fi
+
+        if [ "$concat" -a "$len" -gt 1 ]; then
+            echo "$t"
+            t=${t# }
+            echo "$t"
+            t=${t#\"}
+            echo "$t"
+            t=${t%\"}
+            echo "$t"
+            returnVal+=("$t")
+            t=""
+            concat=""
+        fi
+    done
+}
+
 function create_ini () {
   cat > cfn-stack.ini <<EOF
 stack_name="my-stack"
@@ -36,7 +70,8 @@ function load_ini () {
 
 function create_update_stack () {
   echo "Creating or updating ${stack_name}"
-  aws cloudformation create-stack --region "${region}" --stack-name "${stack_name}" --template-body "file://./${stack_template}"
+  aws cloudformation create-stack --region "${region}" --stack-name "${stack_name}" --template-body "file://./${stack_template}" \
+    --parameters "${stack_parameters}" --capabilities "${capabilities}" --tags "${stack_tags}"
 
   #TODO wait for the stack to be created or to fail
   #TODO rollback a stack that is create failed state
@@ -44,6 +79,7 @@ function create_update_stack () {
 
 function delete_stack () {
   echo "Deleting ${stack_name}"
+  aws cloudformation delete-stack --region "${region}" --stack-name "${stack_name}"
 }
 
 if [ $# -gt 0 ]; then
